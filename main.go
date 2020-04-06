@@ -7,6 +7,7 @@ import (
 
 	"github.com/gorilla/websocket"
 	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
 )
 
 const APPSECRET = "hello"
@@ -18,9 +19,11 @@ var RM = RoomManager{
 }
 
 func main() {
+	// 启动房间管理
 	go RM.start()
 
 	e := echo.New()
+	e.Use(middleware.Logger())
 	e.GET("/", func(c echo.Context) error {
 		return c.String(http.StatusOK, "Hello, HiChat!")
 	})
@@ -61,13 +64,13 @@ func wsHandler(c echo.Context) error {
 		room = &Room{
 			rid:        rid,
 			clients:    make(map[int]*Client),
-			count:      0,
 			register:   make(chan *Client),
 			unregister: make(chan *Client),
 			broadcast:  make(chan Message),
 		}
 		RM.register <- room
 		go room.start()
+		go room.heartbeat()
 	}
 
 	// 客户端注册

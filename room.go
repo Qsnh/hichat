@@ -1,5 +1,11 @@
 package main
 
+import (
+	"time"
+
+	"github.com/gorilla/websocket"
+)
+
 type RoomManager struct {
 	rooms       map[string]*Room
 	register    chan *Room
@@ -13,6 +19,7 @@ type Room struct {
 	register   chan *Client
 	unregister chan *Client
 	broadcast  chan Message
+	forbidden  bool
 }
 
 func (rm *RoomManager) start() {
@@ -47,9 +54,8 @@ func (r *Room) start() {
 		case client := <-r.register:
 			go func() {
 				if r.clients[client.id] != nil {
-					// client已注册，那就先删除掉
-					// unregister通道是同步的，所以这里会阻塞直到完成
-					r.unregister <- r.clients[client.id]
+					// client已注册，那就先释放原先的资源
+					r.clients[client.id].conn.Close()
 				}
 				r.clients[client.id] = client
 				// 房间人数
@@ -87,11 +93,35 @@ func (r *Room) start() {
 				r.broadcast <- message
 			}()
 		case m := <-r.broadcast:
+			// 未禁言
+			if r.forbidden == true {
+				go func() {
+					for _, c := range r.clients {
+						c.receive <- m
+					}
+				}()
+			}
+		}
+	}
+}
+
+func (r *Room) heartbeat() {
+	timer := time.Tick(time.Second * 15)
+	for {
+		if RM.rooms[r.rid] == nil {
+			break
+		}
+		// 发送心跳消息
+		SL.Infof("room:%s,count:%d", r.rid, r.count)
+		for _, client := range r.clients {
+			c := client
 			go func() {
-				for _, c := range r.clients {
-					c.receive <- m
+				err := c.conn.WriteMessage(websocket.PingMessage, []byte{})
+				if err != nil {
+					r.unregister <- c
 				}
 			}()
 		}
+		<-timer
 	}
 }
