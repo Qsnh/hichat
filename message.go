@@ -8,6 +8,6 @@ type MessageUser struct {
 
 type Message struct {
 	User MessageUser `json:user`
-	T    string      `json:type`
-	C    string      `json:content`
+	T    string      `json:t`
+	C    string      `json:c`
 }

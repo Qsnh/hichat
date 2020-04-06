@@ -55,15 +55,14 @@ func (r *Room) start() {
 				// 房间人数
 				r.count++
 				// 发送用户加入的消息
-				user := MessageUser{
-					Id:       client.id,
-					Nickname: client.nickname,
-					Avatar:   client.avatar,
-				}
 				message := Message{
-					User: user,
-					T:    "connect",
-					C:    "",
+					User: MessageUser{
+						Id:       client.id,
+						Nickname: client.nickname,
+						Avatar:   client.avatar,
+					},
+					T: "connect",
+					C: "",
 				}
 				r.broadcast <- message
 			}()
@@ -75,15 +74,15 @@ func (r *Room) start() {
 				r.count--
 				delete(r.clients, client.id)
 				// 发送用户离开的消息
-				user := MessageUser{
-					Id:       client.id,
-					Nickname: client.nickname,
-					Avatar:   client.avatar,
-				}
+
 				message := Message{
-					User: user,
-					T:    "disconnect",
-					C:    "",
+					User: MessageUser{
+						Id:       client.id,
+						Nickname: client.nickname,
+						Avatar:   client.avatar,
+					},
+					T: "disconnect",
+					C: "",
 				}
 				r.broadcast <- message
 			}()
