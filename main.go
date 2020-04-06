@@ -2,11 +2,11 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"net/http"
 	"strconv"
 
 	"github.com/gorilla/websocket"
+	"github.com/labstack/echo/v4"
 )
 
 const APPSECRET = "hello"
@@ -20,27 +20,22 @@ var RM = RoomManager{
 func main() {
 	go RM.start()
 
-	http.HandleFunc("/", func(res http.ResponseWriter, req *http.Request) {
-		fmt.Fprintf(res, "hello hichat.")
+	e := echo.New()
+	e.GET("/", func(c echo.Context) error {
+		return c.String(http.StatusOK, "Hello, HiChat!")
 	})
-	http.HandleFunc("/ws", wsHandler)
-
-	fmt.Println("listening 0.0.0.0:8911")
-
-	err := http.ListenAndServe(":8911", nil)
-	if err != nil {
-		log.Fatal("ListenAndServe", err.Error())
-	}
+	e.GET("/ws", wsHandler)
+	e.Logger.Fatal(e.Start(":8911"))
 }
 
-func wsHandler(res http.ResponseWriter, req *http.Request) {
+func wsHandler(c echo.Context) error {
+	res := c.Response()
+	req := c.Request()
 	//将http协议升级成websocket协议
 	conn, err := (&websocket.Upgrader{CheckOrigin: func(r *http.Request) bool { return true }}).Upgrade(res, req, nil)
 	if err != nil {
-		fmt.Println("升级websocket协议失败")
 		http.NotFound(res, req)
-		return
-
+		return fmt.Errorf("升级websocket协议失败")
 	}
 
 	rid := req.FormValue("room")
@@ -50,16 +45,14 @@ func wsHandler(res http.ResponseWriter, req *http.Request) {
 	sign := req.FormValue("sign")
 
 	if rid == "" || id == "" || nickname == "" || avatar == "" || sign == "" {
-		fmt.Println("请填写完整的参数")
 		conn.Close()
-		return
+		return fmt.Errorf("参数不完整")
 	}
 
 	// sign校验
 	if sign != Md5(rid+id+nickname+avatar+APPSECRET) {
-		fmt.Println("sign校验失败")
 		conn.Close()
-		return
+		return fmt.Errorf("sign校验失败")
 	}
 
 	// 判断房间是否注册
@@ -92,4 +85,6 @@ func wsHandler(res http.ResponseWriter, req *http.Request) {
 	go client.read()
 
 	room.register <- client
+
+	return nil
 }
