@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/gorilla/websocket"
 	"github.com/labstack/echo/v4"
@@ -47,13 +48,22 @@ func wsHandler(c echo.Context) error {
 	avatar := req.FormValue("avatar")
 	sign := req.FormValue("sign")
 
+	// 链接有效期校验
+	timestamp := req.FormValue("timestamp")
+	t, _ := strconv.ParseInt(timestamp, 10, 64)
+	nowT := time.Now().Unix()
+	if t < nowT || t-10 > nowT {
+		conn.Close()
+		return fmt.Errorf("链接已过期")
+	}
+
 	if rid == "" || id == "" || nickname == "" || avatar == "" || sign == "" {
 		conn.Close()
 		return fmt.Errorf("参数不完整")
 	}
 
 	// sign校验
-	if sign != Md5(rid+id+nickname+avatar+APPSECRET) {
+	if sign != Md5(rid+id+nickname+avatar+timestamp+APPSECRET) {
 		conn.Close()
 		return fmt.Errorf("sign校验失败")
 	}
