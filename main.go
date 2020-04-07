@@ -28,6 +28,36 @@ func main() {
 	e.GET("/", func(c echo.Context) error {
 		return c.String(http.StatusOK, "Hello, HiChat!")
 	})
+	e.GET("/room/resume", func(c echo.Context) error {
+		rid := c.Request().FormValue("rid")
+		sign := c.Request().FormValue("sign")
+		if rid == "" || sign == "" {
+			return fmt.Errorf("参数不能为空")
+		}
+		if Md5(rid+APPSECRET) != sign {
+			return fmt.Errorf("请求非法")
+		}
+		if RM.rooms[rid] == nil {
+			return fmt.Errorf("房间不存在")
+		}
+		RM.rooms[rid].forbidden = false
+		return c.String(http.StatusOK, "success")
+	})
+	e.GET("/room/pause", func(c echo.Context) error {
+		rid := c.Request().FormValue("rid")
+		sign := c.Request().FormValue("sign")
+		if rid == "" || sign == "" {
+			return fmt.Errorf("参数不能为空")
+		}
+		if Md5(rid+APPSECRET) != sign {
+			return fmt.Errorf("请求非法")
+		}
+		if RM.rooms[rid] == nil {
+			return fmt.Errorf("房间不存在")
+		}
+		RM.rooms[rid].forbidden = true
+		return c.String(http.StatusOK, "success")
+	})
 	e.GET("/ws", wsHandler)
 	e.Logger.Fatal(e.Start(":8911"))
 }
