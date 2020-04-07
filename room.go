@@ -13,9 +13,9 @@ type RoomManager struct {
 }
 
 type Room struct {
-	rid        string `json:rid`
+	rid        string `json:"rid"`
 	clients    map[int]*Client
-	count      int `json:count`
+	count      int `json:"count"`
 	register   chan *Client
 	unregister chan *Client
 	broadcast  chan Message
@@ -94,7 +94,7 @@ func (r *Room) start() {
 			}()
 		case m := <-r.broadcast:
 			// 未禁言
-			if r.forbidden == true {
+			if r.forbidden == false {
 				go func() {
 					for _, c := range r.clients {
 						c.receive <- m

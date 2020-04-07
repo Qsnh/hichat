@@ -7,10 +7,10 @@ import (
 )
 
 type Client struct {
-	id       int    `json:id`
-	rid      string `json:rid`
-	nickname string `json:nickname`
-	avatar   string `json:avatar`
+	id       int    `json:"id"`
+	rid      string `json:"rid"`
+	nickname string `json:"nickname"`
+	avatar   string `json:"avatar"`
 	conn     *websocket.Conn
 	receive  chan Message
 }
@@ -42,12 +42,16 @@ func (c *Client) read() {
 		if err != nil {
 			break
 		}
-		message := &Message{}
-		err = json.Unmarshal([]byte(m), message)
-		if err != nil {
-			break
+		message := Message{
+			User: MessageUser{
+				Id:       c.id,
+				Nickname: c.nickname,
+				Avatar:   c.avatar,
+			},
+			T: "message",
+			C: string(m),
 		}
 		// 广播消息到room
-		RM.rooms[c.rid].broadcast <- *message
+		RM.rooms[c.rid].broadcast <- message
 	}
 }
