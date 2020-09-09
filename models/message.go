@@ -8,6 +8,10 @@ type MessageUser struct {
 
 type Message struct {
 	User MessageUser `json:"user"`
-	T    string      `json:"t"`
 	C    string      `json:"c"`
+}
+
+type ReceiveMessage struct {
+	Type  string `json:"t"`
+	Value string `json:"v"`
 }

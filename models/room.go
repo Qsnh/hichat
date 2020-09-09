@@ -1,5 +1,7 @@
 package models
 
+import "strconv"
+
 type Room struct {
 	Rid        string `json:"rid"`
 	Clients    map[int]*Client
@@ -33,8 +35,7 @@ func (r *Room) Start() {
 						Nickname: client.Nickname,
 						Avatar:   client.Avatar,
 					},
-					T: "connect",
-					C: "",
+					C: "{\"t\":\"connect\",\"count\":" + strconv.Itoa(r.Count) + "}",
 				}
 				r.Broadcast <- message
 			}()
@@ -46,15 +47,13 @@ func (r *Room) Start() {
 				r.Count--
 				delete(r.Clients, client.Id)
 				// 发送用户离开的消息
-
 				message := Message{
 					User: MessageUser{
 						Id:       client.Id,
 						Nickname: client.Nickname,
 						Avatar:   client.Avatar,
 					},
-					T: "disconnect",
-					C: "",
+					C: "{\"t\":\"disconnect\",\"count\":" + strconv.Itoa(r.Count) + "}",
 				}
 				r.Broadcast <- message
 			}()
